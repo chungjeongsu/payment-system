@@ -13,7 +13,6 @@ import com.v_payment.pay.payment.infra.Result;
 import com.v_payment.pay.payment.infra.SuccessResult;
 import com.v_payment.pay.payment.infra.TossPayment;
 import com.v_payment.pay.payment.repository.PaymentRepository;
-import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
