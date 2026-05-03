@@ -1,6 +1,7 @@
 package com.v_payment.pay.payment.service;
 
 import com.v_payment.pay.global.BusinessException;
+import com.v_payment.pay.global.ConnMonitor;
 import com.v_payment.pay.payment.controller.dto.req.ApprovalReq;
 import com.v_payment.pay.payment.controller.dto.req.PaymentCreateReq;
 import com.v_payment.pay.payment.controller.dto.res.PaymentCreateRes;
@@ -39,6 +40,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentPayload validateApprovalReq(ApprovalReq approvalReq) {
+        ConnMonitor.logConnectionStatus("validateApprovalReq() 트랜잭션 시작");
         Payment payment = paymentRepository.findByOrderIdAndPaymentStatus(approvalReq.orderId(), PaymentStatus.PENDING)
                 .orElseThrow(() -> new BusinessException(PAYMENT_NOT_FOUND));
 
@@ -47,6 +49,7 @@ public class PaymentService {
         if(!payment.isSameProvider(approvalReq.provider())) throw new  BusinessException(PAYMENT_INVALID);
 
         payment.completeValidate(approvalReq);
+
         return payment.getPaymentPayload();
     }
 
@@ -56,6 +59,7 @@ public class PaymentService {
 
     @Transactional
     public Payment finalizePaymentPayload(Result approveResult) {
+        ConnMonitor.logConnectionStatus("finishedPayment() 트랜잭션 시작");
         if(approveResult instanceof SuccessResult successResult) {
             return applySuccessResult(successResult);
         } else if (approveResult instanceof FailedResult failedResult) {

@@ -1,5 +1,6 @@
 package com.v_payment.pay.payment.service;
 
+import com.v_payment.pay.global.ConnMonitor;
 import com.v_payment.pay.global.ExecutorWithRetry;
 import com.v_payment.pay.global.LTimer;
 import com.v_payment.pay.payment.controller.dto.req.ApprovalReq;
@@ -22,14 +23,17 @@ public class PaymentServiceFacade {
     public ApprovalRes approvePipeline(ApprovalReq approvalReq) {
         long vStartTime = LTimer.getCurrTime();
         PaymentPayload paymentPayload = paymentService.validateApprovalReq(approvalReq);
+        ConnMonitor.logConnectionStatus("validateApprovalReq() 트랜잭션 종료 후");
         log.debug("승인 요청 검증 [{}] latency = {}", approvalReq.orderId(), LTimer.getDiff(vStartTime));
 
         long cStartTime = LTimer.getCurrTime();
         Result approveResult = getApproveResult(paymentPayload);
+        ConnMonitor.logConnectionStatus("getApproveResult() 이후");
         log.debug("승인 호출 [{}] latency = {}", approvalReq.orderId(), LTimer.getDiff(cStartTime));
 
         long fStartTime = LTimer.getCurrTime();
         Payment finishedPayment = paymentService.finalizePaymentPayload(approveResult);
+        ConnMonitor.logConnectionStatus("finishedPayment() 트랜잭션 종료 후");
         log.debug("승인 결과 처리 [{}] latency = {}", approvalReq.orderId(), LTimer.getDiff(fStartTime));
 
         return ApprovalRes.from(finishedPayment);
