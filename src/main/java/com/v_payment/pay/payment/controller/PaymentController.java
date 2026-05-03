@@ -1,5 +1,6 @@
 package com.v_payment.pay.payment.controller;
 
+import com.v_payment.pay.global.LTimer;
 import com.v_payment.pay.payment.controller.dto.req.ApprovalReq;
 import com.v_payment.pay.payment.controller.dto.req.PaymentCreateReq;
 import com.v_payment.pay.payment.controller.dto.res.ApprovalRes;
@@ -25,7 +26,6 @@ public class PaymentController {
     public PaymentCreateRes createPayment(
             @RequestBody PaymentCreateReq paymentCreateReq
     ){
-        log.info("요청 금액 = {}", paymentCreateReq.requestedAmount());
         return paymentService.create(paymentCreateReq);
     }
 
@@ -33,7 +33,12 @@ public class PaymentController {
     public ApprovalRes approve(
             @RequestBody ApprovalReq approvalReq
     ) {
-        log.info("승인 예정 금액 = {}", approvalReq.requestedAmount());
-        return paymentServiceFacade.approvePipeline(approvalReq);
+        long startTime = LTimer.getCurrTime();
+
+        ApprovalRes approvalRes = paymentServiceFacade.approvePipeline(approvalReq);
+
+        log.debug("승인 API [{}] latency = {}", approvalRes.orderId(), LTimer.getDiff(startTime));
+
+        return approvalRes;
     }
 }

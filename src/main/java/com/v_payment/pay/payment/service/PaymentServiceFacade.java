@@ -1,6 +1,7 @@
 package com.v_payment.pay.payment.service;
 
 import com.v_payment.pay.global.ExecutorWithRetry;
+import com.v_payment.pay.global.LTimer;
 import com.v_payment.pay.payment.controller.dto.req.ApprovalReq;
 import com.v_payment.pay.payment.controller.dto.res.ApprovalRes;
 import com.v_payment.pay.payment.entity.Payment;
@@ -8,9 +9,6 @@ import com.v_payment.pay.payment.entity.PaymentPayload;
 import com.v_payment.pay.payment.infra.FailedResult;
 import com.v_payment.pay.payment.infra.PaymentError;
 import com.v_payment.pay.payment.infra.Result;
-import io.micrometer.core.annotation.Timed;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -20,49 +18,20 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PaymentServiceFacade {
     private final PaymentService paymentService;
-    private final MeterRegistry meterRegistry;
 
-    @Timed(value = "payment.tx.approve")
     public ApprovalRes approvePipeline(ApprovalReq approvalReq) {
-        PaymentPayload paymentPayload;
-        Result approveResult;
-        Payment finishedPayment;
+        long vStartTime = LTimer.getCurrTime();
+        PaymentPayload paymentPayload = paymentService.validateApprovalReq(approvalReq);
+        log.debug("승인 요청 검증 [{}] latency = {}", approvalReq.orderId(), LTimer.getDiff(vStartTime));
 
-        Timer.Sample validateSample = Timer.start(meterRegistry);
-        try {
-            long s = System.currentTimeMillis();
-            paymentPayload = paymentService.validateApprovalReq(approvalReq);
-            long e = System.currentTimeMillis();
-            log.info("validate 실행시간 = {}", e - s);
-        } finally {
-            validateSample.stop(
-                    Timer.builder("payment.tx.validate1")
-                            .register(meterRegistry)
-            );
-        }
+        long cStartTime = LTimer.getCurrTime();
+        Result approveResult = getApproveResult(paymentPayload);
+        log.debug("승인 호출 [{}] latency = {}", approvalReq.orderId(), LTimer.getDiff(cStartTime));
 
-        Timer.Sample pgSample = Timer.start(meterRegistry);
-        try {
-            approveResult = getApproveResult(paymentPayload);
-            log.info("Toss Payment 호출 성공");
-        } finally {
-            pgSample.stop(
-                    Timer.builder("payment.external.pg")
-                            .register(meterRegistry)
-            );
-        }
+        long fStartTime = LTimer.getCurrTime();
+        Payment finishedPayment = paymentService.finalizePaymentPayload(approveResult);
+        log.debug("승인 결과 처리 [{}] latency = {}", approvalReq.orderId(), LTimer.getDiff(fStartTime));
 
-        Timer.Sample finalizeSample = Timer.start(meterRegistry);
-        try {
-            finishedPayment = paymentService.finalizePaymentPayload(approveResult);
-        } finally {
-            finalizeSample.stop(
-                    Timer.builder("payment.tx.finalize1")
-                            .register(meterRegistry)
-            );
-        }
-
-        log.info("승인 성공");
         return ApprovalRes.from(finishedPayment);
     }
 
