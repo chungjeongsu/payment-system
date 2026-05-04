@@ -4,14 +4,7 @@ import com.v_payment.pay.payment.controller.dto.req.ApprovalReq;
 import com.v_payment.pay.payment.controller.dto.req.PaymentCreateReq;
 import com.v_payment.pay.payment.infra.FailedResult;
 import com.v_payment.pay.payment.infra.SuccessResult;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -54,6 +47,9 @@ public class Payment {
     private String receiptUrl;                      //성공 시
 
     private String failedMessage;                   //실패 시
+
+    @Version
+    private Integer version;
 
     @Builder
     public Payment(Provider provider,

@@ -15,6 +15,7 @@ import com.v_payment.pay.payment.infra.TossPayment;
 import com.v_payment.pay.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +48,12 @@ public class PaymentService {
         if(!payment.isSameMethod(approvalReq.method())) throw new BusinessException(PAYMENT_INVALID);
         if(!payment.isSameProvider(approvalReq.provider())) throw new  BusinessException(PAYMENT_INVALID);
 
-        payment.completeValidate(approvalReq);
+        try {
+            payment.completeValidate(approvalReq);
+            paymentRepository.flush();
+        } catch (OptimisticLockingFailureException e) {
+            throw new BusinessException(PAYMENT_INVALID);
+        }
 
         return payment.getPaymentPayload();
     }
@@ -71,20 +77,38 @@ public class PaymentService {
     public void recoverApproveFailed(PaymentPayload paymentPayload) {
         Payment retryFailedPayment = paymentRepository.findByOrderIdAndPaymentStatus(paymentPayload.getOrderId(),
                 PaymentStatus.APPROVING).orElseThrow(() -> new BusinessException(PAYMENT_NOT_FOUND));
-        retryFailedPayment.retryFailed();
+
+        try{
+            retryFailedPayment.retryFailed();
+            paymentRepository.flush();
+        } catch (OptimisticLockingFailureException e) {
+            throw new BusinessException(PAYMENT_INVALID);
+        }
     }
 
     private Payment applySuccessResult(SuccessResult successResult) {
         Payment successedPayment = paymentRepository.findByOrderIdAndPaymentStatus(successResult.orderId(),
                 PaymentStatus.APPROVING).orElseThrow(() -> new BusinessException(PAYMENT_NOT_FOUND));
-        successedPayment.success(successResult);
-        return successedPayment;
+
+        try{
+            successedPayment.success(successResult);
+            paymentRepository.flush();
+            return successedPayment;
+        } catch (OptimisticLockingFailureException e) {
+            throw new BusinessException(PAYMENT_INVALID);
+        }
     }
 
     private Payment applyFailedResult(FailedResult failedResult) {
         Payment failedPayment = paymentRepository.findByOrderIdAndPaymentStatus(failedResult.orderId(),
                 PaymentStatus.APPROVING).orElseThrow(() -> new BusinessException(PAYMENT_NOT_FOUND));
-        failedPayment.failed(failedResult);
-        return failedPayment;
+
+        try{
+            failedPayment.failed(failedResult);
+            paymentRepository.flush();
+            return failedPayment;
+        } catch (OptimisticLockingFailureException e) {
+            throw new BusinessException(PAYMENT_INVALID);
+        }
     }
 }
