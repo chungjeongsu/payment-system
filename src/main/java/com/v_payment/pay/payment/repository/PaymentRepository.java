@@ -10,6 +10,5 @@ import org.springframework.data.jpa.repository.Lock;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Payment> findByOrderIdAndPaymentStatus(String orderId, PaymentStatus paymentStatus);
 }
