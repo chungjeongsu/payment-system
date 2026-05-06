@@ -15,19 +15,6 @@
 
   <property name="LOG_PATH" value="./logs" />
 
-  <appender name="SERVLET_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${LOG_PATH}/servlet.log</file>
-    <encoder>
-      <pattern>${API_LOG_PATTERN}</pattern>
-    </encoder>
-    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-      <fileNamePattern>${LOG_PATH}/servlet.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
-      <maxFileSize>50MB</maxFileSize>
-      <maxHistory>30</maxHistory>
-      <totalSizeCap>2GB</totalSizeCap>
-    </rollingPolicy>
-  </appender>
-
   <appender name="API_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${LOG_PATH}/api.log</file>
     <encoder>
@@ -54,8 +41,27 @@
     </rollingPolicy>
   </appender>
 
+  <appender name="ERROR_APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <filter class="ch.qos.logback.classic.filter.LevelFilter">
+      <level>ERROR</level>
+      <onMatch>ACCEPT</onMatch>
+      <onMismatch>DENY</onMismatch>
+    </filter>
+    <file>${LOG_PATH}/error.log</file>
+    <encoder>
+      <pattern>${API_LOG_PATTERN}</pattern>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${LOG_PATH}/error.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+      <maxFileSize>50MB</maxFileSize>
+      <maxHistory>30</maxHistory>
+      <totalSizeCap>2GB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
   <root level="INFO">
     <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="ERROR_APPENDER"/>
   </root>
 
   <logger name="SCHEDULER_LOGGER" level="INFO" additivity="true">
@@ -64,18 +70,6 @@
 
   <logger name="API_LOGGER" level="INFO" additivity="true">
     <appender-ref ref="API_APPENDER"/>
-  </logger>
-
-  <logger name="org.apache.catalina" level="INFO" additivity="false">
-    <appender-ref ref="SERVLET_APPENDER"/>
-  </logger>
-
-  <logger name="org.apache.coyote" level="INFO" additivity="false">
-    <appender-ref ref="SERVLET_APPENDER"/>
-  </logger>
-
-  <logger name="org.apache.tomcat" level="INFO" additivity="false">
-    <appender-ref ref="SERVLET_APPENDER"/>
   </logger>
 
 </configuration>
