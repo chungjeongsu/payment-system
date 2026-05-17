@@ -15,6 +15,7 @@ import java.time.Duration;
 @EnableConfigurationProperties(TossPaymentProperties.class)
 public class TossPaymentClientConfig {
     private final TossPaymentProperties tossPaymentProperties;
+    private final RestClient.Builder restClientBuilder;
 
     @Bean
     public RestClient tossPaymentClient() {
@@ -25,7 +26,7 @@ public class TossPaymentClientConfig {
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
         factory.setReadTimeout(Duration.ofSeconds(tossPaymentProperties.timeout()));
 
-        return RestClient.builder()
+        return restClientBuilder
                 .requestFactory(factory)
                 .build();
     }
