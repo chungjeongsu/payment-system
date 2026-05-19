@@ -42,7 +42,7 @@ toss:
     uri: http://10.0.2.253:8080/v1/payments/confirm
     secret: ${TOSS_PAYMENT_SECRET}
     content-type: application/json
-    timeout: 60
+    timeout: 2
 
 management:
   server:
