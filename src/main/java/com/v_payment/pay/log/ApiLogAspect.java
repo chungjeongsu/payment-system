@@ -1,9 +1,5 @@
 package com.v_payment.pay.log;
 
-import static com.v_payment.pay.log.ApiLogContext.METHOD;
-import static com.v_payment.pay.log.ApiLogContext.PATH;
-import static com.v_payment.pay.log.ApiLogContext.TRACE_ID;
-
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -14,6 +10,8 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+
+import static com.v_payment.pay.log.ApiLogContext.*;
 
 @Slf4j(topic = "API_LOGGER")
 @Aspect
@@ -26,6 +24,7 @@ public class ApiLogAspect {
     @Around("apiLogPointcut()")
     public Object applyApiMdc(ProceedingJoinPoint joinPoint) throws Throwable{
         ApiLogContext apiLogContext = resolveApiLogContext();
+        Long startTime = System.currentTimeMillis();
 
         try{
             MDC.put(TRACE_ID, apiLogContext.traceId());
@@ -34,6 +33,8 @@ public class ApiLogAspect {
 
             return joinPoint.proceed();
         } finally {
+            Long endTime = System.currentTimeMillis();
+            MDC.put(ELAPSED_MS, String.valueOf(endTime - startTime));
             MDC.clear();
         }
     }
