@@ -27,38 +27,21 @@ public class TossPayment {
     @Timed(value = "pay.api")
     public Result call(PaymentPayload paymentPayload) {
         long callStartTime = LTimer.getCurrTime();
-        Result result = null;
 
         try{
-            result = exchangeRequestToResponse(paymentPayload);
-            return result;
+            return exchangeRequestToResponse(paymentPayload);
         } catch (ResourceAccessException e) {
-            result = new FailedResult(paymentPayload.getOrderId(), PaymentError.NETWORK_TIMEOUT, e.getMessage());
-            return result;
+            log.warn("승인 API 호출 실패. orderId = {} elapsedMs = {}", paymentPayload.getOrderId(), LTimer.getDiff(callStartTime), e);
+            return new FailedResult(paymentPayload.getOrderId(), PaymentError.NETWORK_TIMEOUT, e.getMessage());
         } catch (RestClientResponseException e) {
+            log.warn("승인 API 호출 실패. orderId = {} elapsedMs = {}", paymentPayload.getOrderId(), LTimer.getDiff(callStartTime), e);
             int statusCode = e.getStatusCode().value();
-            if(statusCode == 429) {
-                result = new FailedResult(paymentPayload.getOrderId(), PaymentError.UPSTREAM_429, e.getMessage());
-                return result;
-            }
-            if(statusCode >= 500) {
-                result = new FailedResult(paymentPayload.getOrderId(), PaymentError.UPSTREAM_5XX, e.getMessage());
-                return result;
-            }
-            result = new  FailedResult(paymentPayload.getOrderId(), PaymentError.UPSTREAM_4XX, e.getMessage());
-            return result;
+            if(statusCode == 429) return new FailedResult(paymentPayload.getOrderId(), PaymentError.UPSTREAM_429, e.getMessage());
+            if(statusCode >= 500) return new FailedResult(paymentPayload.getOrderId(), PaymentError.UPSTREAM_5XX, e.getMessage());
+            return new FailedResult(paymentPayload.getOrderId(), PaymentError.UPSTREAM_4XX, e.getMessage());
         } catch (RuntimeException e) {
-            result = new FailedResult(paymentPayload.getOrderId(), PaymentError.UNKNOWN, e.getMessage());
-            return result;
-        } finally {
-            if(result instanceof FailedResult failedResult) {
-                log.info("승인 API 호출 실패 orderId = {} 원인 = {} elapsedMs = {}", paymentPayload.getOrderId(), failedResult.message(), LTimer.getDiff(callStartTime));
-            }else {
-                log.info("승인 API 호출 성공 orderId = {} elapsedMs = {}", paymentPayload.getOrderId(), LTimer.getDiff(callStartTime));
-            }
-            if(LTimer.getDiff(callStartTime) > tossPaymentProperties.timeout() * 1000) {
-                log.warn("승인 API 호출이 느립니다. orderId = {} elapsedMs = {}",  paymentPayload.getOrderId(), LTimer.getDiff(callStartTime));
-            }
+            log.warn("승인 API 호출 실패. orderId = {} elapsedMs = {}", paymentPayload.getOrderId(), LTimer.getDiff(callStartTime), e);
+            return new FailedResult(paymentPayload.getOrderId(), PaymentError.UNKNOWN, e.getMessage());
         }
     }
 
