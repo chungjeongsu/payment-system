@@ -33,9 +33,7 @@ public class PaymentController {
     public ApprovalRes approve(
             @RequestBody ApprovalReq approvalReq
     ) {
-        log.info("approve api 요청 시작 orderId = {}", approvalReq.orderId());
         ApprovalRes approvalRes = paymentServiceFacade.approvePipeline(approvalReq);
-        log.info("approve api 응답 끝 orderId = {}", approvalRes.orderId());
         return approvalRes;
     }
 }

@@ -14,7 +14,7 @@ import java.io.IOException;
 
 @Slf4j
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class ThreadCheckFilter extends OncePerRequestFilter {
 
     @Override
