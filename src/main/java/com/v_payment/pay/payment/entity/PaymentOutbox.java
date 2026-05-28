@@ -1,5 +1,6 @@
 package com.v_payment.pay.payment.entity;
 
+import com.v_payment.pay.payment.infra.FailedResult;
 import com.v_payment.pay.payment.infra.PaymentError;
 import jakarta.persistence.*;
 import lombok.Builder;
@@ -27,12 +28,11 @@ public class PaymentOutbox {
     @Enumerated(EnumType.STRING)
     private PaymentOutboxStatus status;
 
-    @Version
     private Integer attemptCount;
 
-    private String lastErrorCode;
+    private PaymentError lastErrorCode;   //nullable
 
-    private String lastErrorMessage;
+    private String lastErrorMessage;    //nullable
 
     private LocalDateTime createdAt;
 
@@ -47,7 +47,7 @@ public class PaymentOutbox {
                           Long amount,
                           PaymentOutboxStatus status,
                           Integer attemptCount,
-                          String lastErrorCode,
+                          PaymentError lastErrorCode,
                           String lastErrorMessage,
                           LocalDateTime createdAt,
                           LocalDateTime nextAttemptTime) {
@@ -66,20 +66,35 @@ public class PaymentOutbox {
         return PaymentPayload.create(orderId, paymentKey, amount);
     }
 
-    public void updateStatus(PaymentOutboxStatus status) {
-        this.status = status;
-    }
-
-    public void plusAttemptCount() {
+    public void process() {
+        if(status != PaymentOutboxStatus.READY) throw new IllegalStateException("Ready 상태가 아닙니다.");
+        this.status = PaymentOutboxStatus.PROCESSING;
         this.attemptCount++;
     }
 
-    public void updateLastErrorCode(String lastErrorCode) {
-        this.lastErrorCode = lastErrorCode;
+    public void success() {
+        if(status != PaymentOutboxStatus.PROCESSING) throw new IllegalStateException("Processing 상태가 아닙니다.");
+        this.status = PaymentOutboxStatus.PUBLISHED;
     }
 
-    public void updateLastErrorMessage(String lastErrorMessage) {
-        this.lastErrorMessage = lastErrorMessage;
+    public void failed(FailedResult failedResult, LocalDateTime nextAttemptTime) {
+        if(status != PaymentOutboxStatus.PROCESSING) throw new IllegalStateException("Processing 상태가 아닙니다.");
+        this.status = PaymentOutboxStatus.READY;
+        this.lastErrorCode = failedResult.paymentError();
+        this.lastErrorMessage = failedResult.message();
+        this.nextAttemptTime = nextAttemptTime;
+    }
+
+    public void dead(FailedResult failedResult) {
+        if(status != PaymentOutboxStatus.PROCESSING) throw new IllegalStateException("Processing 상태가 아닙니다.");
+        this.status = PaymentOutboxStatus.DEAD;
+        this.lastErrorCode = failedResult.paymentError();
+        this.lastErrorMessage = failedResult.message();
+        this.nextAttemptTime = null;
+    }
+
+    public void updateStatus(PaymentOutboxStatus status) {
+        this.status = status;
     }
 
     public void updateNextAttemptTime(LocalDateTime nextAttemptTime) {

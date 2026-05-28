@@ -31,7 +31,6 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentOutboxRepository paymentOutboxRepository;
     private final PaymentLedgerService paymentLedgerService;
-    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public PaymentCreateRes create(PaymentCreateReq paymentCreateReq) {
@@ -61,7 +60,5 @@ public class PaymentService {
         //Payment 아웃박스 테이블 저장
         PaymentOutbox paymentOutbox = PaymentOutbox.create(payment, LocalDateTime.now(clock));
         paymentOutboxRepository.save(paymentOutbox);
-
-        applicationEventPublisher.publishEvent(paymentOutbox.getPaymentPayload());
     }
 }
