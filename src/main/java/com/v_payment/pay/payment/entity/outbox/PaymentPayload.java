@@ -1,9 +1,6 @@
-package com.v_payment.pay.payment.entity;
+package com.v_payment.pay.payment.entity.outbox;
 
-import jakarta.persistence.Embeddable;
 import lombok.*;
-
-import java.util.UUID;
 
 @Getter
 public class PaymentPayload {

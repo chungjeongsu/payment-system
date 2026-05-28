@@ -1,6 +1,9 @@
 package com.v_payment.pay.payment.service.outbox;
 
 import com.v_payment.pay.payment.entity.*;
+import com.v_payment.pay.payment.entity.outbox.PaymentOutbox;
+import com.v_payment.pay.payment.entity.outbox.PaymentOutboxStatus;
+import com.v_payment.pay.payment.entity.outbox.PaymentPayload;
 import com.v_payment.pay.payment.infra.FailedResult;
 import com.v_payment.pay.payment.infra.PaymentError;
 import com.v_payment.pay.payment.infra.Result;
@@ -42,8 +45,7 @@ public class PaymentOutboxService {
 
     //2. 가상쓰레드를 사용하여, 각각의 엔티티 로딩
     public PaymentPayload preApprove(Long id) {
-        PaymentOutbox paymentOutbox = paymentOutboxRepository.findById(id)
-                .orElseThrow(() -> new PaymentOutboxError("Payment 이벤트 정보가 없습니다."));
+        PaymentOutbox paymentOutbox = paymentOutboxRepository.findById(id).get();
         return paymentOutbox.getPaymentPayload();
     }
 
@@ -65,12 +67,11 @@ public class PaymentOutboxService {
 
     //4-1. 성공 처리
     private void applySuccessResult(SuccessResult successResult, Long id) {
-        PaymentOutbox paymentOutbox = paymentOutboxRepository.findById(id)
-                .orElseThrow(() -> new PaymentOutboxError("Payment 이벤트 정보가 없습니다."));
+        PaymentOutbox paymentOutbox = paymentOutboxRepository.findById(id).get();
         paymentOutbox.success();
 
         Payment payment = paymentRepository.findByOrderIdAndPaymentStatus(paymentOutbox.getOrderId(),
-                        PaymentStatus.APPROVING).orElseThrow(() -> new PaymentOutboxError("Payment 정보가 없습니다."));
+                PaymentStatus.APPROVING).get();
         payment.success(successResult);
 
         paymentLedgerService.insertPaymentLedgerAPPROVED(payment, successResult);
@@ -78,8 +79,7 @@ public class PaymentOutboxService {
 
     //4-2. 실패 처리
     private void applyFailedResult(FailedResult failedResult, Long id) {
-        PaymentOutbox paymentOutbox = paymentOutboxRepository.findById(id)
-                .orElseThrow(() -> new PaymentOutboxError("PaymentOutbox를 찾을 수 없습니다. id=" + id));
+        PaymentOutbox paymentOutbox = paymentOutboxRepository.findById(id).get();
 
         if (!isRetryable(failedResult) || paymentOutbox.getAttemptCount() >= MAX_ATTEMPT_COUNT) {
             applyDeadResult(failedResult, paymentOutbox); return;
@@ -92,8 +92,8 @@ public class PaymentOutboxService {
     private void applyDeadResult(FailedResult failedResult, PaymentOutbox paymentOutbox) {
         paymentOutbox.dead(failedResult);
 
-        Payment payment = paymentRepository.findByOrderIdAndPaymentStatus(failedResult.orderId(), PaymentStatus.APPROVING)
-                .orElseThrow(() -> new PaymentOutboxError("Payment를 찾을 수 없습니다. orderId=" + failedResult.orderId()));
+        Payment payment = paymentRepository.findByOrderIdAndPaymentStatus(failedResult.orderId(),
+                PaymentStatus.APPROVING).get();
         payment.failed(failedResult);
 
         paymentLedgerService.insertPaymentLedgerREJECTED(payment, failedResult);

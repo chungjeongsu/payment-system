@@ -1,5 +1,8 @@
-package com.v_payment.pay.payment.entity;
+package com.v_payment.pay.payment.entity.ledger;
 
+import com.v_payment.pay.payment.entity.Payment;
+import com.v_payment.pay.payment.entity.PaymentStatus;
+import com.v_payment.pay.payment.entity.Provider;
 import com.v_payment.pay.payment.infra.FailedResult;
 import com.v_payment.pay.payment.infra.SuccessResult;
 import jakarta.persistence.*;

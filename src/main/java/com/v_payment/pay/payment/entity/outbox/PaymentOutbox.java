@@ -1,5 +1,6 @@
-package com.v_payment.pay.payment.entity;
+package com.v_payment.pay.payment.entity.outbox;
 
+import com.v_payment.pay.payment.entity.Payment;
 import com.v_payment.pay.payment.infra.FailedResult;
 import com.v_payment.pay.payment.infra.PaymentError;
 import jakarta.persistence.*;
@@ -30,6 +31,7 @@ public class PaymentOutbox {
 
     private Integer attemptCount;
 
+    @Enumerated(EnumType.STRING)
     private PaymentError lastErrorCode;   //nullable
 
     private String lastErrorMessage;    //nullable
@@ -91,14 +93,6 @@ public class PaymentOutbox {
         this.lastErrorCode = failedResult.paymentError();
         this.lastErrorMessage = failedResult.message();
         this.nextAttemptTime = null;
-    }
-
-    public void updateStatus(PaymentOutboxStatus status) {
-        this.status = status;
-    }
-
-    public void updateNextAttemptTime(LocalDateTime nextAttemptTime) {
-        this.nextAttemptTime = nextAttemptTime;
     }
 
     public static PaymentOutbox create(Payment payment, LocalDateTime createdAt) {

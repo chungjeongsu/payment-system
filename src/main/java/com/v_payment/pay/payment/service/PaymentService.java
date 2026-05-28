@@ -1,19 +1,16 @@
 package com.v_payment.pay.payment.service;
 
 import com.v_payment.pay.global.BusinessException;
-import com.v_payment.pay.global.ConnMonitor;
 import com.v_payment.pay.payment.controller.dto.req.ApprovalReq;
 import com.v_payment.pay.payment.controller.dto.req.PaymentCreateReq;
 import com.v_payment.pay.payment.controller.dto.res.PaymentCreateRes;
 import com.v_payment.pay.payment.entity.*;
-import com.v_payment.pay.payment.exception.PaymentException;
-import com.v_payment.pay.payment.infra.*;
+import com.v_payment.pay.payment.entity.outbox.PaymentOutbox;
 import com.v_payment.pay.payment.repository.PaymentOutboxRepository;
 import com.v_payment.pay.payment.repository.PaymentRepository;
 import com.v_payment.pay.payment.service.ledger.PaymentLedgerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
