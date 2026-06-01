@@ -53,4 +53,4 @@ management:
       application: payment-backend
     distribution:
       percentiles-histogram:
-        http.server.requests: true
+        http.server.requests: false
