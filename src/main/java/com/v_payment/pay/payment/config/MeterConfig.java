@@ -5,8 +5,12 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.config.MeterFilterReply;
+import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
 
 @Configuration
 public class MeterConfig {
@@ -16,6 +20,21 @@ public class MeterConfig {
             @Override
             public MeterFilterReply accept(Meter.Id id) {
                 return isDashboardMetric(id.getName()) ? MeterFilterReply.NEUTRAL : MeterFilterReply.DENY;
+            }
+
+            @Override
+            public DistributionStatisticConfig configure(Meter.Id id, DistributionStatisticConfig config) {
+                if (id.getName().equals("http.server.requests")) {
+                    return DistributionStatisticConfig.builder()
+                            .serviceLevelObjectives(
+                                    Duration.ofMillis(100).toNanos(),
+                                    Duration.ofMillis(300).toNanos(),
+                                    Duration.ofMillis(500).toNanos(),
+                                    Duration.ofSeconds(1).toNanos(),
+                                    Duration.ofSeconds(2).toNanos()
+                            ).build().merge(config);
+                }
+                return config;
             }
         };
     }
