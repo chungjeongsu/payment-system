@@ -45,7 +45,7 @@
     <appender-ref ref="ERROR_APPENDER"/>
   </root>
 
-  <logger name="API_LOGGER" level="INFO" additivity="true">
+  <logger name="API_LOGGER" level="INFO" additivity="false">
     <appender-ref ref="API_APPENDER"/>
   </logger>
 

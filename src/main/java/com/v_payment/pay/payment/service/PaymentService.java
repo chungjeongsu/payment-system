@@ -1,7 +1,6 @@
 package com.v_payment.pay.payment.service;
 
 import com.v_payment.pay.global.BusinessException;
-import com.v_payment.pay.global.ConnMonitor;
 import com.v_payment.pay.payment.controller.dto.req.ApprovalReq;
 import com.v_payment.pay.payment.controller.dto.req.PaymentCreateReq;
 import com.v_payment.pay.payment.controller.dto.res.PaymentCreateRes;
@@ -18,8 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Clock;
 
@@ -51,7 +48,6 @@ public class PaymentService {
 
         try {
             payment.completeValidate(approvalReq);
-            loggedAfterCommit("승인요청 검증 완료 orderId = {} status = {}", payment.getOrderId(), payment.getPaymentStatus());
             paymentRepository.flush();
         } catch (OptimisticLockingFailureException e) {
             throw new BusinessException(PAYMENT_INVALID);
@@ -81,7 +77,6 @@ public class PaymentService {
 
         try{
             retryFailedPayment.retryFailed();
-            loggedAfterCommit("승인 실패 재시도 완료 orderId = {} status = {}", retryFailedPayment.getOrderId(), retryFailedPayment.getPaymentStatus());
             paymentRepository.flush();
         } catch (OptimisticLockingFailureException e) {
             throw new BusinessException(PAYMENT_INVALID);
@@ -94,7 +89,6 @@ public class PaymentService {
 
         try{
             successedPayment.success(successResult);
-            loggedAfterCommit("승인성공 반영 orderId = {} status = {}", successedPayment.getOrderId(), successedPayment.getPaymentStatus());
             paymentRepository.flush();
             return successedPayment;
         } catch (OptimisticLockingFailureException e) {
@@ -108,22 +102,10 @@ public class PaymentService {
 
         try{
             failedPayment.failed(failedResult);
-            loggedAfterCommit("승인성공 실패 orderId = {} status = {}", failedPayment.getOrderId(), failedPayment.getPaymentStatus());
             paymentRepository.flush();
             return failedPayment;
         } catch (OptimisticLockingFailureException e) {
             throw new BusinessException(PAYMENT_INVALID);
         }
-    }
-
-    private static void loggedAfterCommit(String format, Object... args) {
-        TransactionSynchronizationManager.registerSynchronization(
-                new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        log.info(format, args);
-                    }
-                }
-        );
     }
 }

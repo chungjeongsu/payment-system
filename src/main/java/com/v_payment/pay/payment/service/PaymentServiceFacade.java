@@ -1,6 +1,5 @@
 package com.v_payment.pay.payment.service;
 
-import com.v_payment.pay.global.ConnMonitor;
 import com.v_payment.pay.global.ExecutorWithRetry;
 import com.v_payment.pay.global.LTimer;
 import com.v_payment.pay.payment.controller.dto.req.ApprovalReq;

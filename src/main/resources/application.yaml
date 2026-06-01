@@ -26,10 +26,6 @@ spring:
       max-lifetime: 1800000
       keepalive-time: 120000
 
-      auto-commit: true
-      read-only: false
-
-      leak-detection-threshold: 2000
       register-mbeans: true
   jpa:
     hibernate:
